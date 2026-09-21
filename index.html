@@ -1,0 +1,1516 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#F0E9D8" />
+  <title>For You</title>
+
+  <!--
+  ════════════════════════════════════════
+    FONTS — loaded from Google Fonts
+    Lora      → body serif text
+    Caveat    → handwritten annotations
+  ════════════════════════════════════════
+  -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Caveat:wght@400;500;600&display=swap" rel="stylesheet" />
+
+  <style>
+    /* ============================================================
+       CSS CUSTOM PROPERTIES — change colours / sizes here easily
+       ============================================================ */
+    :root {
+      --ivory:      #F4EDD8;
+      --cream:      #EDE3C8;
+      --paper:      #F9F4E8;
+      --aged:       #E6D9BB;
+      --brown:      #7A5C44;
+      --brown-dark: #5A3E2B;
+      --ink:        #2C1A0E;
+      --ink-light:  #4A3020;
+      --burgundy:   #7C3030;
+      --rose:       #A05050;
+      --rose-pale:  #C4857A;
+      --tape:       rgba(210, 190, 140, 0.55);
+      --shadow-sm:  0 2px 8px rgba(60, 30, 10, 0.12);
+      --shadow-md:  0 4px 18px rgba(60, 30, 10, 0.18);
+
+      --font-body:  'Lora', Georgia, serif;
+      --font-hand:  'Caveat', cursive;
+    }
+
+    /* ============================================================
+       RESET & BASE
+       ============================================================ */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      scroll-behavior: smooth;
+      -webkit-text-size-adjust: 100%;
+    }
+
+    body {
+      font-family: var(--font-body);
+      font-size: 17px;
+      line-height: 1.75;
+      color: var(--ink);
+      background-color: var(--cream);
+      min-height: 100dvh;
+      overflow-x: hidden;
+
+      /* subtle paper grain via SVG */
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.045'/%3E%3C/svg%3E");
+    }
+
+    /* ============================================================
+       REDUCED MOTION
+       ============================================================ */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+
+    /* ============================================================
+       UTILITY
+       ============================================================ */
+    .hand { font-family: var(--font-hand); }
+    .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); }
+
+    /* ============================================================
+       ① ENVELOPE SCREEN
+       ============================================================ */
+    #envelope-screen {
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      background-color: var(--cream);
+      background-image:
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.06'/%3E%3C/svg%3E");
+      transition: opacity 0.7s ease, transform 0.7s ease;
+    }
+
+    #envelope-screen.fade-out {
+      opacity: 0;
+      transform: scale(0.97);
+      pointer-events: none;
+    }
+
+    /* The envelope itself */
+    .envelope-wrap {
+      position: relative;
+      width: min(300px, 85vw);
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+
+    /* envelope body */
+    .env-body {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 3/2;
+      background: var(--ivory);
+      border-radius: 3px 3px 8px 8px;
+      box-shadow: var(--shadow-md), inset 0 0 0 1px rgba(120,80,40,0.14);
+      overflow: visible;
+    }
+
+    /* V-shaped inside panel showing through the flap gap */
+    .env-body::before {
+      content: '';
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      height: 60%;
+      background: linear-gradient(to top, var(--aged) 0%, var(--ivory) 100%);
+      border-radius: 0 0 8px 8px;
+    }
+
+    /* diagonal fold lines on the body */
+    .env-body::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(135deg, transparent 49.5%, rgba(120,80,40,0.08) 49.5%, rgba(120,80,40,0.08) 50.5%, transparent 50.5%),
+        linear-gradient(45deg,  transparent 49.5%, rgba(120,80,40,0.08) 49.5%, rgba(120,80,40,0.08) 50.5%, transparent 50.5%);
+      border-radius: 3px 3px 8px 8px;
+    }
+
+    /* top flap */
+    .env-flap {
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 52%;
+      background: var(--ivory);
+      clip-path: polygon(0 0, 100% 0, 50% 100%);
+      transform-origin: top center;
+      transition: transform 0.55s cubic-bezier(0.4, 0, 0.2, 1);
+      z-index: 2;
+      box-shadow: 0 2px 6px rgba(80,40,10,0.14);
+      filter: drop-shadow(0 3px 4px rgba(80,40,10,0.12));
+    }
+
+    /* wax seal on flap */
+    .env-seal {
+      position: absolute;
+      top: 60%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 36px;
+      height: 36px;
+      background: var(--burgundy);
+      border-radius: 50%;
+      z-index: 3;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 6px rgba(80,20,20,0.35);
+      transition: transform 0.3s ease, opacity 0.3s ease;
+    }
+
+    .env-seal::before {
+      content: '♥';
+      color: #c97070;
+      font-size: 15px;
+      line-height: 1;
+    }
+
+    /* envelope text */
+    .env-text {
+      position: absolute;
+      bottom: 22%;
+      left: 0; right: 0;
+      text-align: center;
+      z-index: 4;
+    }
+
+    .env-text .for-you {
+      font-family: var(--font-hand);
+      font-size: 28px;
+      color: var(--ink-light);
+      display: block;
+      line-height: 1.2;
+    }
+
+    /* "open this" tap hint */
+    .env-hint {
+      margin-top: 28px;
+      font-family: var(--font-hand);
+      font-size: 15px;
+      color: var(--rose);
+      letter-spacing: 0.03em;
+      opacity: 0.85;
+      animation: hint-pulse 2.4s ease-in-out infinite;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    @keyframes hint-pulse {
+      0%, 100% { opacity: 0.55; transform: translateY(0); }
+      50%       { opacity: 0.95; transform: translateY(-3px); }
+    }
+
+    /* flap open animation */
+    .envelope-wrap.opening .env-flap {
+      transform: rotateX(180deg);
+    }
+
+    .envelope-wrap.opening .env-seal {
+      opacity: 0;
+      transform: translate(-50%, -50%) scale(0.7);
+    }
+
+    /* little stamp top-right of envelope */
+    .env-stamp {
+      position: absolute;
+      top: -10px;
+      right: -10px;
+      width: 38px;
+      height: 46px;
+      background: var(--ivory);
+      border: 1.5px solid rgba(120,80,40,0.25);
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      border-radius: 2px;
+      /* perforated edge via repeating-linear-gradient */
+      outline: 3px dashed rgba(120,80,40,0.15);
+      outline-offset: 3px;
+      z-index: 5;
+    }
+
+    /* ============================================================
+       MAIN CONTENT (hidden until envelope opens)
+       ============================================================ */
+    #main-content {
+      display: none;
+      padding-bottom: env(safe-area-inset-bottom, 20px);
+    }
+
+    #main-content.visible {
+      display: block;
+    }
+
+    /* ============================================================
+       GLOBAL SECTION WRAPPER
+       ============================================================ */
+    .section {
+      padding: 48px 22px;
+      max-width: 680px;
+      margin: 0 auto;
+    }
+
+    .section-label {
+      font-family: var(--font-hand);
+      font-size: 13px;
+      color: var(--rose);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .section-label::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: linear-gradient(to right, var(--rose-pale), transparent);
+      opacity: 0.5;
+    }
+
+    /* ============================================================
+       ② THE LETTER
+       ============================================================ */
+    #letter-section {
+      padding-top: 56px;
+    }
+
+    .letter-paper {
+      background: var(--paper);
+      border-radius: 2px 2px 4px 4px;
+      padding: 40px 30px 48px;
+      box-shadow: var(--shadow-md), 0 1px 0 rgba(120,80,40,0.08);
+      position: relative;
+
+      /* horizontal lines like real paper */
+      background-image:
+        linear-gradient(to bottom, transparent calc(1.75em - 1px), rgba(120,80,40,0.07) calc(1.75em - 1px), rgba(120,80,40,0.07) 1.75em, transparent 1.75em),
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+      background-size: 100% 1.75em, 300px 300px;
+    }
+
+    /* torn top edge */
+    .letter-paper::before {
+      content: '';
+      position: absolute;
+      top: -4px; left: 0; right: 0;
+      height: 8px;
+      background: linear-gradient(to right,
+        var(--paper) 0%, var(--paper) 5%,
+        transparent 5.5%, var(--paper) 6.5%,
+        var(--paper) 11%, transparent 11.5%,
+        var(--paper) 13%, var(--paper) 22%,
+        transparent 22.5%, var(--paper) 24%,
+        var(--paper) 35%, transparent 35.5%,
+        var(--paper) 36.5%, var(--paper) 48%,
+        transparent 48.5%, var(--paper) 50%,
+        var(--paper) 63%, transparent 63.5%,
+        var(--paper) 65%, var(--paper) 76%,
+        transparent 76.5%, var(--paper) 78%,
+        var(--paper) 90%, transparent 90.5%,
+        var(--paper) 92%, var(--paper) 100%
+      );
+      clip-path: polygon(
+        0% 40%, 1.5% 0%, 3% 60%, 5% 20%, 7% 80%, 9% 10%, 11% 50%,
+        13% 15%, 15% 70%, 18% 30%, 20% 85%, 22% 20%, 24% 65%,
+        27% 10%, 29% 75%, 32% 25%, 34% 80%, 37% 15%, 39% 60%,
+        42% 20%, 44% 75%, 47% 30%, 50% 85%, 52% 20%, 55% 70%,
+        57% 15%, 60% 60%, 62% 25%, 65% 80%, 67% 20%, 70% 70%,
+        72% 10%, 75% 65%, 77% 20%, 80% 75%, 83% 15%, 85% 60%,
+        88% 25%, 90% 80%, 93% 20%, 95% 65%, 98% 15%, 100% 50%,
+        100% 100%, 0% 100%
+      );
+    }
+
+    /* red margin line */
+    .letter-paper::after {
+      content: '';
+      position: absolute;
+      top: 0; bottom: 0;
+      left: 58px;
+      width: 1px;
+      background: rgba(160, 80, 80, 0.22);
+    }
+
+    .letter-date {
+      font-family: var(--font-hand);
+      font-size: 15px;
+      color: var(--brown);
+      text-align: right;
+      margin-bottom: 28px;
+      margin-right: 4px;
+      opacity: 0.8;
+    }
+
+    .letter-greeting {
+      font-family: var(--font-hand);
+      font-size: 26px;
+      color: var(--ink);
+      margin-bottom: 18px;
+    }
+
+    .letter-body {
+      font-size: 17px;
+      line-height: 1.85;
+      color: var(--ink-light);
+    }
+
+    .letter-body p {
+      margin-bottom: 1.4em;
+    }
+
+    .letter-body p:last-child {
+      margin-bottom: 0;
+    }
+
+    .letter-sign-off {
+      margin-top: 36px;
+      font-family: var(--font-hand);
+      font-size: 22px;
+      color: var(--ink);
+      line-height: 1.4;
+    }
+
+    .letter-sign-off span {
+      display: block;
+      font-size: 15px;
+      color: var(--brown);
+      margin-top: 4px;
+    }
+
+    /* small doodle heart near signature */
+    .letter-doodle {
+      position: absolute;
+      bottom: 32px;
+      right: 32px;
+      font-family: var(--font-hand);
+      font-size: 28px;
+      color: var(--rose-pale);
+      opacity: 0.55;
+      transform: rotate(12deg);
+      pointer-events: none;
+    }
+
+    /* ============================================================
+       ③ LITTLE MEMORIES (scrapbook)
+       ============================================================ */
+    #memories-section {
+      background: var(--ivory);
+      border-top: 1px solid rgba(120,80,40,0.1);
+      border-bottom: 1px solid rgba(120,80,40,0.1);
+    }
+
+    .memories-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 28px;
+      margin-top: 8px;
+    }
+
+    .memory-card {
+      position: relative;
+      padding: 22px 24px 22px 50px;
+      background: var(--paper);
+      box-shadow: var(--shadow-sm);
+      border-left: 3px solid var(--rose-pale);
+    }
+
+    .memory-card:nth-child(even) {
+      transform: rotate(0.4deg);
+    }
+
+    .memory-card:nth-child(odd):not(:first-child) {
+      transform: rotate(-0.3deg);
+    }
+
+    .memory-num {
+      position: absolute;
+      left: 14px;
+      top: 20px;
+      font-family: var(--font-hand);
+      font-size: 28px;
+      color: var(--rose-pale);
+      line-height: 1;
+      opacity: 0.7;
+    }
+
+    .memory-title {
+      font-family: var(--font-hand);
+      font-size: 20px;
+      color: var(--ink);
+      margin-bottom: 6px;
+    }
+
+    .memory-text {
+      font-size: 15.5px;
+      line-height: 1.7;
+      color: var(--ink-light);
+    }
+
+    .memory-annotation {
+      display: inline-block;
+      margin-top: 10px;
+      font-family: var(--font-hand);
+      font-size: 13px;
+      color: var(--rose);
+      transform: rotate(-2.5deg);
+      opacity: 0.8;
+    }
+
+    /* tape strip on some cards */
+    .memory-card::before {
+      content: '';
+      display: block;
+      position: absolute;
+      top: -8px;
+      left: 50%;
+      transform: translateX(-50%) rotate(-1.5deg);
+      width: 52px;
+      height: 18px;
+      background: var(--tape);
+      border-radius: 2px;
+    }
+
+    .memory-card:nth-child(even)::before {
+      transform: translateX(-50%) rotate(2deg);
+    }
+
+    /* ============================================================
+       ④ PHOTO MEMORIES (Polaroids)
+       ============================================================ */
+    #photos-section {
+      overflow: hidden;
+    }
+
+    .photos-intro {
+      font-family: var(--font-hand);
+      font-size: 16px;
+      color: var(--brown);
+      margin-bottom: 28px;
+      opacity: 0.85;
+    }
+
+    .polaroid-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 36px;
+      align-items: center;
+    }
+
+    .polaroid {
+      position: relative;
+      background: #fff;
+      padding: 10px 10px 38px;
+      box-shadow: var(--shadow-md);
+      max-width: 260px;
+      width: 100%;
+    }
+
+    /* different rotations — deliberately imperfect */
+    .polaroid:nth-child(1) { transform: rotate(-2.2deg); }
+    .polaroid:nth-child(2) { transform: rotate( 1.8deg); margin-left: 16px; }
+    .polaroid:nth-child(3) { transform: rotate(-1.1deg); margin-right: 12px; }
+    .polaroid:nth-child(4) { transform: rotate( 2.6deg); }
+    .polaroid:nth-child(5) { transform: rotate(-0.8deg); margin-left: 8px; }
+
+    .polaroid-img {
+      width: 100%;
+      aspect-ratio: 1;
+      object-fit: cover;
+      display: block;
+      background: var(--aged);
+      /* placeholder look when no real image */
+      position: relative;
+    }
+
+    /* placeholder overlay when image missing */
+    .polaroid-img-wrap {
+      position: relative;
+      overflow: hidden;
+    }
+
+    .polaroid-img-placeholder {
+      width: 100%;
+      aspect-ratio: 1;
+      background: linear-gradient(135deg, var(--aged) 0%, var(--cream) 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 8px;
+      color: var(--brown);
+      opacity: 0.7;
+      font-size: 13px;
+      font-family: var(--font-hand);
+    }
+
+    .polaroid-img-placeholder svg {
+      width: 32px;
+      height: 32px;
+      opacity: 0.5;
+    }
+
+    .polaroid-caption {
+      padding-top: 10px;
+      text-align: center;
+      font-family: var(--font-hand);
+      font-size: 16px;
+      color: var(--ink-light);
+      line-height: 1.3;
+    }
+
+    /* tape on polaroids */
+    .polaroid::before {
+      content: '';
+      position: absolute;
+      top: -10px;
+      left: 50%;
+      transform: translateX(-50%) rotate(1deg);
+      width: 46px;
+      height: 20px;
+      background: var(--tape);
+      border-radius: 2px;
+    }
+
+    .polaroid:nth-child(even)::before {
+      transform: translateX(-50%) rotate(-1.5deg);
+    }
+
+    /* ============================================================
+       ⑤ TIMELINE
+       ============================================================ */
+    #timeline-section {
+      background: var(--ivory);
+      border-top: 1px solid rgba(120,80,40,0.1);
+      border-bottom: 1px solid rgba(120,80,40,0.1);
+    }
+
+    .timeline {
+      position: relative;
+      padding-left: 28px;
+      margin-top: 12px;
+    }
+
+    /* vertical line */
+    .timeline::before {
+      content: '';
+      position: absolute;
+      left: 7px;
+      top: 0; bottom: 0;
+      width: 1px;
+      background: linear-gradient(to bottom, transparent, var(--rose-pale) 10%, var(--rose-pale) 90%, transparent);
+    }
+
+    .timeline-item {
+      position: relative;
+      padding-bottom: 32px;
+    }
+
+    .timeline-item:last-child {
+      padding-bottom: 0;
+    }
+
+    /* dot on the line */
+    .timeline-item::before {
+      content: '';
+      position: absolute;
+      left: -24px;
+      top: 6px;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--rose-pale);
+      border: 2px solid var(--ivory);
+      box-shadow: 0 0 0 1px var(--rose-pale);
+    }
+
+    .timeline-date {
+      font-family: var(--font-hand);
+      font-size: 13px;
+      color: var(--rose);
+      letter-spacing: 0.06em;
+      margin-bottom: 3px;
+      opacity: 0.85;
+    }
+
+    .timeline-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--ink);
+      margin-bottom: 4px;
+    }
+
+    .timeline-desc {
+      font-size: 14.5px;
+      color: var(--ink-light);
+      line-height: 1.65;
+    }
+
+    /* ============================================================
+       ⑥ OPEN WHEN ENVELOPES
+       ============================================================ */
+    #open-when-section {
+      overflow: hidden;
+    }
+
+    .open-when-intro {
+      font-size: 15px;
+      color: var(--brown);
+      margin-bottom: 28px;
+      font-style: italic;
+    }
+
+    .ow-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .ow-envelope {
+      position: relative;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+
+    .ow-env-visual {
+      background: var(--ivory);
+      border: 1px solid rgba(120,80,40,0.2);
+      border-radius: 2px;
+      padding: 18px 12px 14px;
+      box-shadow: var(--shadow-sm);
+      text-align: center;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .ow-envelope:active .ow-env-visual,
+    .ow-envelope:hover .ow-env-visual {
+      transform: translateY(-2px) rotate(1deg);
+      box-shadow: var(--shadow-md);
+    }
+
+    /* V flap */
+    .ow-env-visual::before {
+      content: '';
+      display: block;
+      width: 100%;
+      height: 0;
+      border-left: 50% solid transparent;
+      border-right: 50% solid transparent;
+      border-top: 22px solid rgba(120,80,40,0.1);
+      margin-bottom: 12px;
+    }
+
+    .ow-label {
+      font-family: var(--font-hand);
+      font-size: 14.5px;
+      color: var(--ink-light);
+      line-height: 1.3;
+    }
+
+    .ow-tap-hint {
+      font-family: var(--font-hand);
+      font-size: 11px;
+      color: var(--rose);
+      margin-top: 6px;
+      opacity: 0.7;
+    }
+
+    /* revealed message */
+    .ow-message {
+      display: none;
+      margin-top: 14px;
+      padding: 18px 16px;
+      background: var(--paper);
+      border-left: 2px solid var(--rose-pale);
+      box-shadow: var(--shadow-sm);
+      font-size: 14.5px;
+      line-height: 1.7;
+      color: var(--ink-light);
+      font-style: italic;
+      position: relative;
+      animation: unfold 0.35s ease;
+    }
+
+    @keyframes unfold {
+      from { opacity: 0; transform: translateY(-8px) scaleY(0.9); }
+      to   { opacity: 1; transform: translateY(0)   scaleY(1); }
+    }
+
+    .ow-message.open {
+      display: block;
+    }
+
+    .ow-message-close {
+      display: block;
+      margin-top: 10px;
+      font-family: var(--font-hand);
+      font-size: 12px;
+      color: var(--rose);
+      cursor: pointer;
+      text-align: right;
+      opacity: 0.75;
+    }
+
+    /* ============================================================
+       ⑦ HIDDEN MESSAGE
+       ============================================================ */
+    #hidden-section {
+      background: var(--ivory);
+      border-top: 1px solid rgba(120,80,40,0.1);
+    }
+
+    .hidden-hint {
+      font-family: var(--font-hand);
+      font-size: 18px;
+      color: var(--brown);
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      opacity: 0.7;
+      transition: opacity 0.2s;
+      user-select: none;
+      padding: 6px 0;
+    }
+
+    .hidden-hint:hover,
+    .hidden-hint:active {
+      opacity: 1;
+    }
+
+    .hidden-hint .arrow {
+      display: inline-block;
+      font-family: var(--font-hand);
+      font-size: 22px;
+      color: var(--rose);
+      transform: rotate(-8deg);
+      transition: transform 0.3s;
+    }
+
+    .hidden-reveal {
+      display: none;
+      margin-top: 24px;
+      padding: 28px 24px;
+      background: var(--paper);
+      box-shadow: var(--shadow-md);
+      position: relative;
+      animation: unfold 0.5s ease;
+    }
+
+    .hidden-reveal.open {
+      display: block;
+    }
+
+    .hidden-reveal-text {
+      font-family: var(--font-hand);
+      font-size: 22px;
+      color: var(--ink);
+      line-height: 1.6;
+    }
+
+    /* small decorative ink marks */
+    .hidden-reveal::after {
+      content: '♥';
+      position: absolute;
+      bottom: 16px;
+      right: 20px;
+      font-size: 22px;
+      color: var(--rose-pale);
+      opacity: 0.5;
+      transform: rotate(10deg);
+    }
+
+    /* ============================================================
+       ⑧ FINAL LETTER
+       ============================================================ */
+    #final-section {
+      padding-bottom: max(64px, env(safe-area-inset-bottom, 64px));
+    }
+
+    .final-paper {
+      background: var(--paper);
+      padding: 36px 28px 44px;
+      box-shadow: var(--shadow-sm);
+      position: relative;
+      border-radius: 1px;
+    }
+
+    .final-paper::before {
+      content: '';
+      position: absolute;
+      bottom: -4px; left: 10px; right: 10px;
+      height: 6px;
+      background: var(--aged);
+      z-index: -1;
+    }
+
+    .final-paper::after {
+      content: '';
+      position: absolute;
+      bottom: -8px; left: 20px; right: 20px;
+      height: 6px;
+      background: var(--cream);
+      box-shadow: 0 2px 4px rgba(80,40,10,0.12);
+      z-only: -2;
+    }
+
+    .final-text {
+      font-size: 17px;
+      line-height: 1.85;
+      color: var(--ink-light);
+      margin-bottom: 1.4em;
+    }
+
+    .final-signature {
+      margin-top: 32px;
+      font-family: var(--font-hand);
+      font-size: 30px;
+      color: var(--ink);
+      line-height: 1.2;
+    }
+
+    .final-signature small {
+      display: block;
+      font-size: 15px;
+      color: var(--brown);
+      margin-top: 6px;
+    }
+
+    .final-hearts {
+      margin-top: 32px;
+      font-family: var(--font-hand);
+      font-size: 22px;
+      color: var(--rose-pale);
+      opacity: 0.6;
+      letter-spacing: 4px;
+    }
+
+    /* ============================================================
+       DECORATIVE DIVIDERS
+       ============================================================ */
+    .divider {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 8px 0;
+      color: var(--rose-pale);
+      font-size: 18px;
+      opacity: 0.5;
+      letter-spacing: 6px;
+    }
+
+    /* ============================================================
+       SCROLL REVEAL (subtle fade-up)
+       ============================================================ */
+    .reveal {
+      opacity: 0;
+      transform: translateY(18px);
+      transition: opacity 0.6s ease, transform 0.6s ease;
+    }
+
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* ============================================================
+       RESPONSIVE TWEAKS
+       ============================================================ */
+    @media (max-width: 360px) {
+      .section { padding: 40px 16px; }
+      .letter-paper { padding: 32px 20px 40px; }
+      .letter-paper::after { left: 44px; }
+      .ow-grid { grid-template-columns: 1fr; }
+      .polaroid { max-width: 220px; }
+    }
+
+    @media (min-width: 500px) {
+      .polaroid-grid {
+        flex-direction: row;
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+      .polaroid { max-width: 200px; }
+    }
+
+  </style>
+</head>
+<body>
+
+  <!-- ========================================================
+       ① ENVELOPE OPENING SCREEN
+       ======================================================== -->
+  <div id="envelope-screen" role="main" aria-label="Opening screen">
+    <div class="envelope-wrap" id="envelope" role="button" tabindex="0" aria-label="Tap to open">
+
+      <div class="env-body">
+        <div class="env-flap"></div>
+        <div class="env-seal"></div>
+        <div class="env-stamp" aria-hidden="true">✉</div>
+
+        <div class="env-text">
+          <!-- ════ PERSONALISE: recipient's name ════ -->
+          <span class="for-you hand">For you, my love</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="env-hint hand" aria-hidden="true">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+        <path d="M8 2v9M4 8l4 4 4-4"/>
+      </svg>
+      tap to open
+    </div>
+  </div>
+
+
+  <!-- ========================================================
+       MAIN CONTENT (shown after envelope opens)
+       ======================================================== -->
+  <div id="main-content" aria-live="polite">
+
+    <!-- ──────────────────────────────────────────
+         ② THE LETTER
+         ────────────────────────────────────────── -->
+    <section id="letter-section" class="section reveal">
+      <p class="section-label hand">a letter, just for you</p>
+
+      <div class="letter-paper">
+        <!-- ════ PERSONALISE: date ════ -->
+        <p class="letter-date">September 22, 2026</p>
+
+        <!-- ════ PERSONALISE: greeting ════ -->
+        <p class="letter-greeting">My dearest,</p>
+
+        <div class="letter-body">
+          <!--
+            ════════════════════════════════════════════
+              PERSONALISE: Replace everything below
+              with your own letter. Each <p> is a
+              new paragraph. Use <em> for italic.
+            ════════════════════════════════════════════
+          -->
+          <p>
+			  Sorry itne time baad letter likh rha hu, tumhe toh pta he hai bhul jata hu hehe... Abb utna toh yaad nhi ki uss time kya likha tha prr jo bhi likha tha Trust me accha he likha tha but bich-bich MOTI, NAGIN and etc etc bhi likha cuz I love irritating you my Girl. Let me remember mene kya likha tha, hhmmmm.... .
+		  </p>
+          <p>
+            First of all <em> I love you Meri Moti </em>. And 2nd, haan mai sirf tumhara hu, sach kahu toh mujhe kuch samjh nhi aa rha mai kya likhu, pta nhi tum kese likh deti ho 3-3 page, mera toh dimag he khaali hai, kuch samjh he nhi aata kya likhna hai aur kya nhi. You are intelligent btw but bass english aur likhne mai kyuki maths physics aur chemistry tumse hoti nhi. Haan vo alag baat hai mujhse english nhi hoti hehe.
+          </p>
+          <p>
+			  I just wanna make you feel special that's why mene tumhe aise letter dene ka socha. Lastly mai ye kahunga If I had another 1,000 lives, I’d want to spend every single one of them with you.
+
+		  </p>
+          <p>
+            Keep scrolling. There's more.
+          </p>
+        </div>
+
+        <!-- ════ PERSONALISE: sign-off & your name ════ -->
+        <div class="letter-sign-off">
+          With everything,<br/>
+          <span>— Your [Piyush]</span>
+        </div>
+
+        <div class="letter-doodle" aria-hidden="true">♡</div>
+      </div>
+    </section>
+
+    <div class="divider" aria-hidden="true">· · ·</div>
+
+    <!-- ──────────────────────────────────────────
+         ③ LITTLE MEMORIES
+         ────────────────────────────────────────── -->
+    <section id="memories-section" class="section reveal">
+      <p class="section-label hand">little things I keep</p>
+
+      <div class="memories-grid">
+
+        <!--
+          ════════════════════════════════════════════
+            PERSONALISE: Edit each memory-card block.
+            Change the title, text, and annotation.
+            Add or remove <div class="memory-card"> blocks.
+          ════════════════════════════════════════════
+        -->
+
+        <div class="memory-card">
+          <span class="memory-num">01</span>
+          <p class="memory-title">The First Time We Talked</p>
+          <p class="memory-text">
+            Genuinely — at that time mujhe pta chal gya tha that you're the only girl I wanna spend the rest of my life with, pta nhi bass andar se feeling aa rhi thi ki tumhare saath rehna hai.
+          </p>
+          <span class="memory-annotation">still makes me smile →</span>
+        </div>
+
+        <div class="memory-card">
+          <span class="memory-num">02</span>
+          <p class="memory-title">That First Time you Laughed With all happiness</p>
+          <p class="memory-text">
+           Arre tabb jab camera nhi lga tha niche, ham ghumte rehte thee vhi, kya he toh hassi thi tum uss din, kitna accha lag rha tha tumhe dhek ke, I was feeling happy that I made you laugh that much.
+          </p>
+          <span class="memory-annotation">the best kind of nothing</span>
+        </div>
+
+        <div class="memory-card">
+          <span class="memory-num">03</span>
+          <p class="memory-title">The Way I Say My Name</p>
+          <p class="memory-text">
+            Kitne pyaare naam se aur kitne pyaare se mai tumhe bulata hu jese Moti, Gadhi, Hippo, Nagin. Kitne pyaare naam hai yaar ye aur voo naam MOMMY, kitna mastt naam hai ye toh, I love calling you from these names.
+          </p>
+          <span class="memory-annotation">← one of my favourite things</span>
+        </div>
+
+        <div class="memory-card">
+          <span class="memory-num">04</span>
+          <p class="memory-title">You, Being Kind</p>
+          <p class="memory-text">
+            The small, ordinary kindness you show — to people around you and to me. It's quiet. But I see it. It's one of the things I love most about you.
+          </p>
+          <span class="memory-annotation">this one's important ♡</span>
+        </div>
+
+      </div>
+    </section>
+
+    <div class="divider" aria-hidden="true">· · ·</div>
+
+    <!-- ──────────────────────────────────────────
+         ④ PHOTO MEMORIES (Polaroids)
+         ────────────────────────────────────────── -->
+    <section id="photos-section" class="section reveal">
+      <p class="section-label hand">moments in pictures</p>
+      <p class="photos-intro hand">some of my favourites of us —</p>
+
+      <div class="polaroid-grid">
+        <!--
+          ════════════════════════════════════════════
+            PERSONALISE: Replace placeholder images.
+            Add your photos to the /assets/ folder.
+            Change src="assets/photo1.jpg" etc.
+            Change the caption text below each photo.
+
+            To add a real image: replace the
+            <div class="polaroid-img-placeholder">
+            block with:
+            <img src="assets/photo1.jpg"
+                 class="polaroid-img"
+                 alt="[describe the photo]" />
+          ════════════════════════════════════════════
+        -->
+
+        <div class="polaroid">
+          <div class="polaroid-img-wrap">
+			  <img src="assets/IMG_20260922_021223_507.jpg" class="polaroid-img" alt="photo 1" />
+          </div>
+          <!-- ════ PERSONALISE: caption ════ -->
+          <p class="polaroid-caption">that day we —</p>
+        </div>
+
+        <div class="polaroid">
+          <div class="polaroid-img-wrap">
+			  <img src="assets/IMG_20260922_021133_409.jpg" class="polaroid-img" alt="photo 2" />
+          </div>
+          <p class="polaroid-caption">I didn't know you were watching</p>
+        </div>
+
+        <div class="polaroid">
+          <div class="polaroid-img-wrap">
+			  <img src="assets/IMG_20260922_021251_696.jpg" class="polaroid-img" alt="photo 3" />
+          </div>
+          <p class="polaroid-caption">Sharma gyii</p>
+        </div>
+
+        <div class="polaroid">
+          <div class="polaroid-img-wrap">
+			  <img src="assets/IMG_20260922_021343.jpg" class="polaroid-img" alt="photo 4" />
+          </div>
+          <p class="polaroid-caption">My favourite one</p>
+        </div>
+
+        <div class="polaroid">
+          <div class="polaroid-img-wrap">
+			  <img src="assets/IMG_20260922_021202_962.jpg" class="polaroid-img" alt="photo 5" />
+          </div>
+          <p class="polaroid-caption">us</p>
+        </div>
+
+      </div>
+    </section>
+
+    <div class="divider" aria-hidden="true">· · ·</div>
+
+    <!-- ──────────────────────────────────────────
+         ⑤ TIMELINE
+         ────────────────────────────────────────── -->
+    <section id="timeline-section" class="section reveal">
+      <p class="section-label hand">our story so far</p>
+
+      <div class="timeline">
+        <!--
+          ════════════════════════════════════════════
+            PERSONALISE: Edit dates, titles, and
+            descriptions. Add or remove .timeline-item
+            blocks as needed.
+          ════════════════════════════════════════════
+        -->
+
+        <div class="timeline-item">
+          <p class="timeline-date">the beginning</p>
+          <p class="timeline-title">We met</p>
+          <p class="timeline-desc">
+            Neither of us expected it. But there you were, and somehow everything shifted just slightly.
+          </p>
+        </div>
+
+        <div class="timeline-item">
+          <!-- ════ PERSONALISE: date ════ -->
+          <p class="timeline-date">a while later</p>
+          <p class="timeline-title">First time I knew</p>
+          <p class="timeline-desc">
+            I don't remember what we were talking about. I just remember thinking: I like this person a lot.
+          </p>
+        </div>
+
+        <div class="timeline-item">
+          <p class="timeline-date">then</p>
+          <p class="timeline-title">Something changed</p>
+          <p class="timeline-desc">
+            There was a moment — maybe you know the one — when this became something I didn't want to lose.
+          </p>
+        </div>
+
+        <div class="timeline-item">
+          <p class="timeline-date">now</p>
+          <p class="timeline-title">Here</p>
+          <p class="timeline-desc">
+            Still figuring things out. Still grateful. Still choosing this, every day.
+          </p>
+        </div>
+
+      </div>
+    </section>
+
+    <div class="divider" aria-hidden="true">· · ·</div>
+
+    <!-- ──────────────────────────────────────────
+         ⑥ OPEN WHEN ENVELOPES
+         ────────────────────────────────────────── -->
+    <section id="open-when-section" class="section reveal">
+      <p class="section-label hand">little letters</p>
+      <p class="open-when-intro">For whenever you need one. Tap to open.</p>
+
+      <div class="ow-grid">
+        <!--
+          ════════════════════════════════════════════
+            PERSONALISE: Edit .ow-label text and
+            the message inside .ow-message.
+          ════════════════════════════════════════════
+        -->
+
+        <!-- Envelope 1 -->
+        <div class="ow-envelope" role="button" tabindex="0" aria-expanded="false">
+          <div class="ow-env-visual">
+            <p class="ow-label">Open when you're sad</p>
+            <p class="ow-tap-hint">tap ↓</p>
+          </div>
+          <div class="ow-message" aria-hidden="true">
+            <!--  ════ PERSONALISE ════ -->
+            Hey. Sad days are allowed. You don't have to be okay right now. I just want you to know that whatever it is, you won't be in it forever — and I'm here even when I'm not physically there. It always passes. And you're not alone in it.
+            <span class="ow-message-close" role="button" tabindex="0">close ×</span>
+          </div>
+        </div>
+
+        <!-- Envelope 2 -->
+        <div class="ow-envelope" role="button" tabindex="0" aria-expanded="false">
+          <div class="ow-env-visual">
+            <p class="ow-label">Open when you miss me</p>
+            <p class="ow-tap-hint">tap ↓</p>
+          </div>
+          <div class="ow-message" aria-hidden="true">
+            <!--  ════ PERSONALISE ════ -->
+            I miss you too. Probably right now. Wherever I am, a part of me is always a little bit pointing in your direction. The distance is temporary. You're not.
+            <span class="ow-message-close" role="button" tabindex="0">close ×</span>
+          </div>
+        </div>
+
+        <!-- Envelope 3 -->
+        <div class="ow-envelope" role="button" tabindex="0" aria-expanded="false">
+          <div class="ow-env-visual">
+            <p class="ow-label">Open when you need a smile</p>
+            <p class="ow-tap-hint">tap ↓</p>
+          </div>
+          <div class="ow-message" aria-hidden="true">
+            <!--  ════ PERSONALISE ════ -->
+            You have the best laugh. Like, genuinely. Also — you're doing so well. Better than you think. Okay now smile. There. That's the one. ♡
+            <span class="ow-message-close" role="button" tabindex="0">close ×</span>
+          </div>
+        </div>
+
+        <!-- Envelope 4 -->
+        <div class="ow-envelope" role="button" tabindex="0" aria-expanded="false">
+          <div class="ow-env-visual">
+            <p class="ow-label">Open when you can't sleep</p>
+            <p class="ow-tap-hint">tap ↓</p>
+          </div>
+          <div class="ow-message" aria-hidden="true">
+            <!--  ════ PERSONALISE ════ -->
+            Put the phone down after this. Close your eyes. Think of somewhere quiet — maybe somewhere we've been, or somewhere you'd like to go. Your mind is just busy. It doesn't mean something is wrong. I hope sleep finds you gently tonight.
+            <span class="ow-message-close" role="button" tabindex="0">close ×</span>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <div class="divider" aria-hidden="true">· · ·</div>
+
+    <!-- ──────────────────────────────────────────
+         ⑦ HIDDEN MESSAGE
+         ────────────────────────────────────────── -->
+    <section id="hidden-section" class="section reveal">
+
+      <div
+        class="hidden-hint hand"
+        id="hidden-trigger"
+        role="button"
+        tabindex="0"
+        aria-expanded="false"
+        aria-controls="hidden-reveal"
+      >
+        <span class="arrow">↳</span>
+        <!--  ════ PERSONALISE: hint text ════ -->
+        there might be one more thing here...
+      </div>
+
+      <div class="hidden-reveal" id="hidden-reveal" aria-hidden="true">
+        <!--
+          ════════════════════════════════════════════
+            PERSONALISE: Write whatever you want
+            here. This is the secret message.
+            It can be a few lines or longer.
+          ════════════════════════════════════════════
+        -->
+        <p class="hidden-reveal-text">
+          I made this whole thing because I wanted you to feel, even for a few minutes, just how often I think about you. The answer is: constantly. In small, ordinary, quiet ways. While I'm cooking, or reading, or looking out a window. You just kind of live in the background of every ordinary moment now. And I'm really glad you do.
+        </p>
+      </div>
+
+    </section>
+
+    <div class="divider" aria-hidden="true">· · ·</div>
+
+    <!-- ──────────────────────────────────────────
+         ⑧ FINAL LETTER
+         ────────────────────────────────────────── -->
+    <section id="final-section" class="section reveal">
+      <p class="section-label hand">and finally —</p>
+
+      <div class="final-paper">
+        <!--
+          ════════════════════════════════════════════
+            PERSONALISE: Replace the final message.
+          ════════════════════════════════════════════
+        -->
+        <p class="final-text">
+          Thank you for being exactly who you are. For the ordinary days and the hard ones. For letting me be part of your life. I don't take any of it for granted.
+        </p>
+        <p class="final-text">
+          I love you. More than I say. More than this little website can hold.
+        </p>
+
+        <!-- ════ PERSONALISE: your name ════ -->
+        <div class="final-signature">
+          Yours,<br/>
+          [The Great Piyush]
+          <small>always.</small>
+        </div>
+
+        <div class="final-hearts" aria-hidden="true">♡ ♡ ♡</div>
+      </div>
+    </section>
+
+  </div>
+  <!-- end #main-content -->
+
+
+  <!-- ========================================================
+       JAVASCRIPT
+       ======================================================== -->
+  <script>
+    /* ──────────────────────────────────────────────
+       ENVELOPE OPEN
+    ────────────────────────────────────────────── */
+    const envelopeScreen = document.getElementById('envelope-screen');
+    const envelope       = document.getElementById('envelope');
+    const mainContent    = document.getElementById('main-content');
+
+    let opened = false;
+
+    function openEnvelope() {
+      if (opened) return;
+      opened = true;
+
+      // 1. Animate flap open
+      envelope.classList.add('opening');
+
+      // 2. After brief delay, fade out screen & show content
+      setTimeout(() => {
+        envelopeScreen.classList.add('fade-out');
+        mainContent.classList.add('visible');
+
+        // 3. After transition, remove from DOM so it doesn't block touch
+        setTimeout(() => {
+          envelopeScreen.style.display = 'none';
+          // trigger scroll-reveal for first sections
+          revealCheck();
+        }, 720);
+
+      }, 520);
+    }
+
+    envelope.addEventListener('click', openEnvelope);
+    envelope.addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        openEnvelope();
+      }
+    });
+
+
+    /* ──────────────────────────────────────────────
+       SCROLL REVEAL
+    ────────────────────────────────────────────── */
+    const revealEls = document.querySelectorAll('.reveal');
+
+    function revealCheck() {
+      const threshold = window.innerHeight * 0.88;
+      revealEls.forEach(el => {
+        const rect = el.getBoundingClientRect();
+        if (rect.top < threshold) {
+          el.classList.add('visible');
+        }
+      });
+    }
+
+    // Use IntersectionObserver when available (better performance)
+    if ('IntersectionObserver' in window) {
+      const io = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+            io.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.08 });
+
+      revealEls.forEach(el => io.observe(el));
+    } else {
+      window.addEventListener('scroll', revealCheck, { passive: true });
+      revealCheck();
+    }
+
+
+    /* ──────────────────────────────────────────────
+       OPEN-WHEN ENVELOPES
+    ────────────────────────────────────────────── */
+    document.querySelectorAll('.ow-envelope').forEach(env => {
+      const message = env.querySelector('.ow-message');
+      const closeBtn = env.querySelector('.ow-message-close');
+
+      function toggle() {
+        const isOpen = message.classList.contains('open');
+        if (isOpen) {
+          message.classList.remove('open');
+          message.setAttribute('aria-hidden', 'true');
+          env.setAttribute('aria-expanded', 'false');
+        } else {
+          message.classList.add('open');
+          message.setAttribute('aria-hidden', 'false');
+          env.setAttribute('aria-expanded', 'true');
+          // smooth scroll to reveal
+          setTimeout(() => {
+            message.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          }, 80);
+        }
+      }
+
+      env.querySelector('.ow-env-visual').addEventListener('click', toggle);
+      env.querySelector('.ow-env-visual').addEventListener('keydown', e => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); }
+      });
+
+      if (closeBtn) {
+        closeBtn.addEventListener('click', e => {
+          e.stopPropagation();
+          message.classList.remove('open');
+          message.setAttribute('aria-hidden', 'true');
+          env.setAttribute('aria-expanded', 'false');
+        });
+        closeBtn.addEventListener('keydown', e => {
+          if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); message.classList.remove('open'); }
+        });
+      }
+    });
+
+
+    /* ──────────────────────────────────────────────
+       HIDDEN MESSAGE
+    ────────────────────────────────────────────── */
+    const hiddenTrigger = document.getElementById('hidden-trigger');
+    const hiddenReveal  = document.getElementById('hidden-reveal');
+
+    hiddenTrigger.addEventListener('click', () => {
+      const isOpen = hiddenReveal.classList.contains('open');
+      hiddenReveal.classList.toggle('open');
+      hiddenReveal.setAttribute('aria-hidden', isOpen ? 'true' : 'false');
+      hiddenTrigger.setAttribute('aria-expanded', isOpen ? 'false' : 'true');
+
+      if (!isOpen) {
+        const arrow = hiddenTrigger.querySelector('.arrow');
+        if (arrow) { arrow.style.transform = 'rotate(-8deg) scale(1.15)'; }
+        setTimeout(() => {
+          hiddenReveal.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }, 80);
+      } else {
+        const arrow = hiddenTrigger.querySelector('.arrow');
+        if (arrow) { arrow.style.transform = ''; }
+      }
+    });
+
+    hiddenTrigger.addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); hiddenTrigger.click(); }
+    });
+
+  </script>
+
+</body>
+</html>
